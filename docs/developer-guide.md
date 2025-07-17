@@ -14,8 +14,10 @@ static/
 docs/
     user-guide.md
     developer-guide.md
+    answer-sheet.tex
 requirements.txt
-``` 
+```
+
 
 ## Key Functions
 - `parse_answers_from_text(text)`

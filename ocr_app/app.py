@@ -1,5 +1,6 @@
 import os
 import re
+import uuid
 from typing import Dict, List, Any
 
 from flask import (
@@ -223,12 +224,22 @@ def create_app() -> Flask:
     @app.route("/download")
     @login_required
     def download_sheet():
-        nonlocal exam_name, num_questions
+        nonlocal exam_name, num_questions, answer_key
         if not exam_name:
             flash("Exam details not set.", "danger")
             return redirect(url_for("index"))
+        try:
+            n = int(request.args.get("num_students", "1"))
+        except ValueError:
+            n = 1
+        n = max(1, min(n, 500))
+        codes = [uuid.uuid4().hex[:8] for _ in range(n)]
         tex = render_template(
-            "answer_sheet.tex", exam_name=exam_name, num_questions=num_questions
+            "answer_sheet.tex",
+            exam_name=exam_name,
+            num_questions=num_questions,
+            answer_key=answer_key,
+            codes=codes,
         )
         tmpdir = os.path.join(app.root_path, "tmp")
         os.makedirs(tmpdir, exist_ok=True)

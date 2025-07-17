@@ -2,16 +2,27 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{array}
 \usepackage{amssymb}
+\usepackage{qrcode}
 \renewcommand{\arraystretch}{1.5}
 \begin{document}
+{% for code in codes %}
 \begin{center}
   {\LARGE {{ exam_name }} Answer Sheet}\\[1em]
+  Student Code: {{ code }}\\[1em]
+  \qrcode[height=1in]{ {{ code }} }\\[1em]
   Name: \hrulefill\hspace{2cm} Date: \hrulefill\\[2em]
   \begin{tabular}{c|*5{>{\Large$\square$}c}}
     \textbf{No} & A & B & C & D & E\\\hline
     {% for i in range(1, num_questions + 1) %}
-    {{ i }} &  &  &  &  &  \\
+    {{ i }} &
+    {% if answer_key and answer_key[i-1] == 'A' %}X{% endif %} &
+    {% if answer_key and answer_key[i-1] == 'B' %}X{% endif %} &
+    {% if answer_key and answer_key[i-1] == 'C' %}X{% endif %} &
+    {% if answer_key and answer_key[i-1] == 'D' %}X{% endif %} &
+    {% if answer_key and answer_key[i-1] == 'E' %}X{% endif %} \\
     {% endfor %}
   \end{tabular}
 \end{center}
+\newpage
+{% endfor %}
 \end{document}

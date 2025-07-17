@@ -2,24 +2,24 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{array}
 \usepackage{amssymb}
-\usepackage{qrcode}
+\usepackage{graphicx}
+\usepackage{barcode}
+{% raw %}
+\newcommand{\verticalbarcode}[1]{\makebox[0pt][l]{\rotatebox{90}{\barcode{code-39}{#1}}}}
+{% endraw %}
 \renewcommand{\arraystretch}{1.5}
 \begin{document}
 {% for code in codes %}
 \begin{center}
   {\LARGE {{ exam_name }} Answer Sheet}\\[1em]
   Student Code: {{ code }}\\[1em]
-  \qrcode[height=1in]{ {{ code }} }\\[1em]
+  \begin{flushleft}\verticalbarcode{ {{ code }} }\end{flushleft}
+  \vspace{1em}
   Name: \hrulefill\hspace{2cm} Date: \hrulefill\\[2em]
-  \begin{tabular}{c|*5{>{\Large$\square$}c}}
+  \begin{tabular}{c|*5{>{\Large$\bigcirc$}c}}
     \textbf{No} & A & B & C & D & E\\\hline
     {% for i in range(1, num_questions + 1) %}
-    {{ i }} &
-    {% if answer_key and answer_key[i-1] == 'A' %}X{% endif %} &
-    {% if answer_key and answer_key[i-1] == 'B' %}X{% endif %} &
-    {% if answer_key and answer_key[i-1] == 'C' %}X{% endif %} &
-    {% if answer_key and answer_key[i-1] == 'D' %}X{% endif %} &
-    {% if answer_key and answer_key[i-1] == 'E' %}X{% endif %} \\
+    {{ i }} & & & & & \\
     {% endfor %}
   \end{tabular}
 \end{center}

@@ -2,12 +2,18 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{array}
 \usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{barcode}
+% Use circles instead of squares for the answer options
+\newcommand{\verticalbarcode}[1]{\makebox[0pt][l]{\rotatebox{90}{\barcode{code-39}{#1}}}}
 \renewcommand{\arraystretch}{1.5}
 \begin{document}
 \begin{center}
   {\LARGE Standard Answer Sheet}\\[1em]
+  \begin{flushleft}\verticalbarcode{1234567890}\end{flushleft}
+  \vspace{1em}
   Name: \hrulefill\hspace{2cm} Date: \hrulefill\\[2em]
-  \begin{tabular}{c|*5{>{\Large$\square$}c}}
+  \begin{tabular}{c|*5{>{\Large$\bigcirc$}c}}
     \textbf{No} & A & B & C & D & E\\\hline
     1 &  &  &  &  &  \\
     2 &  &  &  &  &  \\

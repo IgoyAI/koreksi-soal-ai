@@ -3,9 +3,9 @@
 \usepackage{array}
 \usepackage{amssymb}
 \usepackage{graphicx}
-\usepackage{barcode}
+\usepackage[nolinks]{qrcode}
 {% raw %}
-\newcommand{\verticalbarcode}[1]{\makebox[0pt][l]{\rotatebox{90}{\barcode{code-39}{#1}}}}
+\newcommand{\sheetqrcode}[1]{\qrcode[height=1in]{#1}}
 {% endraw %}
 \renewcommand{\arraystretch}{1.5}
 \begin{document}
@@ -13,7 +13,7 @@
 \begin{center}
   {\LARGE {{ exam_name }} Answer Sheet}\\[1em]
   Student Code: {{ code }}\\[1em]
-  \begin{flushleft}\verticalbarcode{ {{ code }} }\end{flushleft}
+  \begin{flushleft}\sheetqrcode{ {{ code }} }\end{flushleft}
   \vspace{1em}
   Name: \hrulefill\hspace{2cm} Date: \hrulefill\\[2em]
   \begin{tabular}{c|*5{>{\Large$\bigcirc$}c}}

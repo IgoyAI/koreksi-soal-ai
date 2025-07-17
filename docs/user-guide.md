@@ -5,10 +5,10 @@ This application allows you to check multiple choice answer sheets using OCR fro
 ## Steps
 
 1. Install the dependencies listed in `requirements.txt`. Make sure `tesseract`,
-   `pdflatex` and the LaTeX `barcode` package are installed so OCR and PDF
-   generation work correctly. The `barcode` package can be installed with
-   `tlmgr install barcode` (run `tlmgr update --self` first if required) or
-   `apt-get install texlive-barcodes`.
+   `pdflatex` and the LaTeX `qrcode` package are installed so OCR and PDF
+   generation work correctly. The `qrcode` package can be installed with
+   `tlmgr install qrcode` (run `tlmgr update --self` first if required) or
+   `apt-get install texlive-qrcode`.
 2. Compile the provided LaTeX answer sheet if you want a standardized form:
    ```bash
    pdflatex docs/answer-sheet.tex

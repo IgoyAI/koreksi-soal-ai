@@ -10,6 +10,7 @@ from flask import (
     url_for,
     flash,
     send_file,
+    session,
 )
 from werkzeug.utils import secure_filename
 
@@ -19,6 +20,19 @@ from PIL import Image
 from . import data
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+
+
+def login_required(func):
+    """Simple login required decorator using session."""
+    from functools import wraps
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not session.get("logged_in"):
+            return redirect(url_for("login"))
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 def allowed_file(filename: str) -> bool:
@@ -61,7 +75,26 @@ def create_app() -> Flask:
     answer_key: List[str] = []
     num_questions: int = 50
 
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        if request.method == "POST":
+            username = request.form.get("username")
+            password = request.form.get("password")
+            if username == "admin" and password == "admin123":
+                session["logged_in"] = True
+                flash("Logged in successfully", "success")
+                return redirect(url_for("dashboard"))
+            flash("Invalid credentials", "danger")
+        return render_template("login.html")
+
+    @app.route("/logout")
+    def logout():
+        session.clear()
+        flash("Logged out", "success")
+        return redirect(url_for("login"))
+
     @app.route("/", methods=["GET", "POST"])
+    @login_required
     def index():
         nonlocal project_name, exam_name, answer_key, num_questions
         if request.method == "POST":
@@ -142,6 +175,7 @@ def create_app() -> Flask:
         )
 
     @app.route("/upload", methods=["POST"])
+    @login_required
     def upload():
         nonlocal project_name, exam_name, answer_key, num_questions
         if not exam_name or not answer_key:
@@ -187,6 +221,7 @@ def create_app() -> Flask:
         )
 
     @app.route("/download")
+    @login_required
     def download_sheet():
         nonlocal exam_name, num_questions
         if not exam_name:
@@ -207,9 +242,109 @@ def create_app() -> Flask:
         )
 
     @app.route("/dashboard")
+    @login_required
     def dashboard():
         data_store = data.load_data()
         return render_template("dashboard.html", projects=data_store.get("projects", []))
+
+    @app.route("/project/<int:pid>")
+    @login_required
+    def view_project(pid: int):
+        data_store = data.load_data()
+        if pid < 0 or pid >= len(data_store.get("projects", [])):
+            flash("Project not found", "danger")
+            return redirect(url_for("dashboard"))
+        project = data_store["projects"][pid]
+        return render_template("project_view.html", project=project, pid=pid)
+
+    @app.route("/project/<int:pid>/edit", methods=["GET", "POST"])
+    @login_required
+    def edit_project(pid: int):
+        data_store = data.load_data()
+        if pid < 0 or pid >= len(data_store.get("projects", [])):
+            flash("Project not found", "danger")
+            return redirect(url_for("dashboard"))
+        project = data_store["projects"][pid]
+        if request.method == "POST":
+            name = request.form.get("name", "").strip()
+            if not name:
+                flash("Name required", "danger")
+            else:
+                project["name"] = name
+                data.save_data(data_store)
+                flash("Project updated", "success")
+                return redirect(url_for("view_project", pid=pid))
+        return render_template("project_edit.html", project=project, pid=pid)
+
+    @app.route("/project/<int:pid>/delete", methods=["POST"])
+    @login_required
+    def delete_project(pid: int):
+        data_store = data.load_data()
+        if 0 <= pid < len(data_store.get("projects", [])):
+            data_store["projects"].pop(pid)
+            data.save_data(data_store)
+            flash("Project deleted", "success")
+        else:
+            flash("Project not found", "danger")
+        return redirect(url_for("dashboard"))
+
+    @app.route("/project/<int:pid>/exam/<int:eid>")
+    @login_required
+    def view_exam(pid: int, eid: int):
+        data_store = data.load_data()
+        if pid < 0 or pid >= len(data_store.get("projects", [])):
+            flash("Project not found", "danger")
+            return redirect(url_for("dashboard"))
+        project = data_store["projects"][pid]
+        if eid < 0 or eid >= len(project.get("exams", [])):
+            flash("Exam not found", "danger")
+            return redirect(url_for("view_project", pid=pid))
+        exam = project["exams"][eid]
+        return render_template("exam_view.html", exam=exam, pid=pid)
+
+    @app.route("/project/<int:pid>/exam/<int:eid>/edit", methods=["GET", "POST"])
+    @login_required
+    def edit_exam(pid: int, eid: int):
+        data_store = data.load_data()
+        if pid < 0 or pid >= len(data_store.get("projects", [])):
+            flash("Project not found", "danger")
+            return redirect(url_for("dashboard"))
+        project = data_store["projects"][pid]
+        if eid < 0 or eid >= len(project.get("exams", [])):
+            flash("Exam not found", "danger")
+            return redirect(url_for("view_project", pid=pid))
+        exam = project["exams"][eid]
+        if request.method == "POST":
+            name = request.form.get("name", "").strip()
+            try:
+                n = int(request.form.get("num_questions", "0"))
+            except ValueError:
+                n = 0
+            if not name or n <= 0:
+                flash("Invalid input", "danger")
+            else:
+                exam["name"] = name
+                exam["num_questions"] = n
+                data.save_data(data_store)
+                flash("Exam updated", "success")
+                return redirect(url_for("view_project", pid=pid))
+        return render_template("exam_edit.html", exam=exam, pid=pid)
+
+    @app.route("/project/<int:pid>/exam/<int:eid>/delete", methods=["POST"])
+    @login_required
+    def delete_exam(pid: int, eid: int):
+        data_store = data.load_data()
+        if pid < 0 or pid >= len(data_store.get("projects", [])):
+            flash("Project not found", "danger")
+            return redirect(url_for("dashboard"))
+        project = data_store["projects"][pid]
+        if 0 <= eid < len(project.get("exams", [])):
+            project["exams"].pop(eid)
+            data.save_data(data_store)
+            flash("Exam deleted", "success")
+        else:
+            flash("Exam not found", "danger")
+        return redirect(url_for("view_project", pid=pid))
 
     return app
 

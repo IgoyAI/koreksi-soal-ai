@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Edit Exam{% endblock %}
+{% block content %}
+<h1 class="mb-4">Edit Exam</h1>
+<form method="post">
+  <div class="form-group">
+    <label for="name">Name</label>
+    <input type="text" class="form-control" id="name" name="name" value="{{ exam.name }}" required>
+  </div>
+  <div class="form-group">
+    <label for="num_questions">Number of Questions</label>
+    <input type="number" class="form-control" id="num_questions" name="num_questions" value="{{ exam.num_questions }}" min="1" max="100" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Save</button>
+  <a href="{{ url_for('view_project', pid=pid) }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

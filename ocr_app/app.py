@@ -195,12 +195,52 @@ def create_app() -> Flask:
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             file.save(filepath)
-            text = pytesseract.image_to_string(Image.open(filepath))
+
+            img = Image.open(filepath)
+            text = pytesseract.image_to_string(img)
             student_answers = parse_answers_from_text(text, num_questions)
             results = compare_answers(answer_key, student_answers)
             score = sum(results.values())
+
+            # extract bounding boxes for each detected "number letter" pair
+            data_dict = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+            boxes: List[Dict[str, Any]] = []
+            width, height = img.size
+            n_words = len(data_dict["text"])
+            for i in range(n_words - 1):
+                first = data_dict["text"][i].strip()
+                second = data_dict["text"][i + 1].strip()
+                if first.isdigit() and len(second) == 1 and second.upper() in "ABCDE":
+                    num = int(first)
+                    if 1 <= num <= num_questions:
+                        left = min(data_dict["left"][i], data_dict["left"][i + 1])
+                        top = min(data_dict["top"][i], data_dict["top"][i + 1])
+                        right = max(
+                            data_dict["left"][i] + data_dict["width"][i],
+                            data_dict["left"][i + 1] + data_dict["width"][i + 1],
+                        )
+                        bottom = max(
+                            data_dict["top"][i] + data_dict["height"][i],
+                            data_dict["top"][i + 1] + data_dict["height"][i + 1],
+                        )
+                        boxes.append(
+                            {
+                                "num": num,
+                                "ans": second.upper(),
+                                "left": left / width * 100,
+                                "top": top / height * 100,
+                                "width": (right - left) / width * 100,
+                                "height": (bottom - top) / height * 100,
+                            }
+                        )
+
             results_list.append(
-                {"filename": filename, "results": results, "score": score}
+                {
+                    "filename": filename,
+                    "results": results,
+                    "score": score,
+                    "boxes": boxes,
+                }
             )
 
             # persist results
@@ -277,6 +317,12 @@ def create_app() -> Flask:
             as_attachment=True,
             download_name=f"{exam_name}_answer_sheet.pdf",
         )
+
+    @app.route("/uploads/<path:filename>")
+    @login_required
+    def uploaded_file(filename: str):
+        """Serve uploaded images for preview."""
+        return send_file(os.path.join(app.config["UPLOAD_FOLDER"], filename))
 
     @app.route("/dashboard")
     @login_required

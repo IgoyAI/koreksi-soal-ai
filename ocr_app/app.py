@@ -1,12 +1,22 @@
 import os
 import re
-from typing import Dict, List
+from typing import Dict, List, Any
 
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    send_file,
+)
 from werkzeug.utils import secure_filename
 
 import pytesseract
 from PIL import Image
+
+from . import data
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
@@ -44,6 +54,8 @@ def create_app() -> Flask:
     app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "uploads")
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
+    store = data.load_data()
+
     project_name: str | None = None
     exam_name: str | None = None
     answer_key: List[str] = []
@@ -60,6 +72,10 @@ def create_app() -> Flask:
                     flash("Project name is required.", "danger")
                 else:
                     project_name = name
+                    # create project if not exists
+                    if not any(p["name"] == name for p in store["projects"]):
+                        store["projects"].append({"name": name, "exams": []})
+                        data.save_data(store)
                     flash("Project created.", "success")
                 return redirect(url_for("index"))
 
@@ -79,6 +95,19 @@ def create_app() -> Flask:
                 exam_name = name
                 num_questions = n
                 answer_key = []
+                # ensure exam entry exists
+                for proj in store["projects"]:
+                    if proj["name"] == project_name:
+                        proj["exams"].append(
+                            {
+                                "name": exam_name,
+                                "num_questions": num_questions,
+                                "answer_key": [],
+                                "results": [],
+                            }
+                        )
+                        data.save_data(store)
+                        break
                 flash("Exam details saved.", "success")
                 return redirect(url_for("index"))
 
@@ -91,6 +120,16 @@ def create_app() -> Flask:
                     return redirect(url_for("index"))
                 answers.append(val.upper())
             answer_key = answers
+            # save answer key into store
+            for proj in store["projects"]:
+                if proj["name"] == project_name:
+                    for exam in proj["exams"]:
+                        if exam["name"] == exam_name:
+                            exam["answer_key"] = answer_key
+                            exam["num_questions"] = num_questions
+                            data.save_data(store)
+                            break
+                    break
             flash("Answer key saved. Upload answer sheet image to check.", "success")
             return redirect(url_for("index"))
 
@@ -128,6 +167,21 @@ def create_app() -> Flask:
                 {"filename": filename, "results": results, "score": score}
             )
 
+            # persist results
+            for proj in store["projects"]:
+                if proj["name"] == project_name:
+                    for exam in proj["exams"]:
+                        if exam["name"] == exam_name:
+                            exam.setdefault("results", []).append(
+                                {
+                                    "filename": filename,
+                                    "score": score,
+                                }
+                            )
+                            data.save_data(store)
+                            break
+                    break
+
         return render_template(
             "result.html", results_list=results_list, total=len(answer_key)
         )
@@ -151,6 +205,11 @@ def create_app() -> Flask:
         return send_file(
             pdf_path, as_attachment=True, download_name=f"{exam_name}_answer_sheet.pdf"
         )
+
+    @app.route("/dashboard")
+    def dashboard():
+        data_store = data.load_data()
+        return render_template("dashboard.html", projects=data_store.get("projects", []))
 
     return app
 

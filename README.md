@@ -12,10 +12,7 @@ Printable answer sheets can be generated from the LaTeX template in `docs/answer
    pip install -r requirements.txt
    ```
    Ensure `tesseract` is installed on your system and accessible in your PATH.
-   To generate printable answer sheets you also need `pdflatex` and the LaTeX
-   `qrcode` package available. Install the package with `tlmgr install qrcode`
-   (running `tlmgr update --self` first if required) or
-   `apt-get install texlive-qrcode` depending on your TeX setup.
+   To generate printable answer sheets you also need `pdflatex` installed.
 2. Run the application:
    ```bash
    python -m ocr_app.app

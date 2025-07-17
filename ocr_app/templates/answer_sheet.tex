@@ -3,17 +3,13 @@
 \usepackage{array}
 \usepackage{amssymb}
 \usepackage{graphicx}
-\usepackage[nolinks]{qrcode}
-{% raw %}
-\newcommand{\sheetqrcode}[1]{\qrcode[height=1in]{#1}}
-{% endraw %}
+% QR code removed
 \renewcommand{\arraystretch}{1.5}
 \begin{document}
 {% for code in codes %}
 \begin{center}
   {\LARGE {{ exam_name }} Answer Sheet}\\[1em]
   Student Code: {{ code }}\\[1em]
-  \begin{flushleft}\sheetqrcode{ {{ code }} }\end{flushleft}
   \vspace{1em}
   Name: \hrulefill\hspace{2cm} Date: \hrulefill\\[2em]
   \begin{tabular}{c|*5{>{\Large$\bigcirc$}c}}

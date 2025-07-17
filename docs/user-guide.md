@@ -4,7 +4,7 @@ This application allows you to check multiple choice answer sheets using OCR fro
 
 ## Steps
 
-1. Install the dependencies listed in `requirements.txt`. Make sure `tesseract` is installed on your system so `pytesseract` can invoke it.
+1. Install the dependencies listed in `requirements.txt`. Make sure both `tesseract` and `pdflatex` are installed so OCR and PDF generation work correctly.
 2. Compile the provided LaTeX answer sheet if you want a standardized form:
    ```bash
    pdflatex docs/answer-sheet.tex

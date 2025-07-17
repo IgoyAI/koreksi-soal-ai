@@ -247,6 +247,43 @@ def create_app() -> Flask:
         data_store = data.load_data()
         return render_template("dashboard.html", projects=data_store.get("projects", []))
 
+    @app.route("/project/new", methods=["POST"])
+    @login_required
+    def create_project():
+        name = request.form.get("name", "").strip()
+        if not name:
+            flash("Project name required", "danger")
+            return redirect(url_for("dashboard"))
+        data_store = data.load_data()
+        if any(p.get("name") == name for p in data_store.get("projects", [])):
+            flash("Project already exists", "danger")
+            return redirect(url_for("dashboard"))
+        data_store.setdefault("projects", []).append({"name": name, "exams": []})
+        data.save_data(data_store)
+        flash("Project created", "success")
+        return redirect(url_for("dashboard"))
+
+    @app.route("/project/<int:pid>/exam/new", methods=["POST"])
+    @login_required
+    def create_exam(pid: int):
+        data_store = data.load_data()
+        if pid < 0 or pid >= len(data_store.get("projects", [])):
+            flash("Project not found", "danger")
+            return redirect(url_for("dashboard"))
+        project = data_store["projects"][pid]
+        name = request.form.get("name", "").strip()
+        try:
+            num = int(request.form.get("num_questions", "0"))
+        except ValueError:
+            num = 0
+        if not name or num <= 0:
+            flash("Invalid exam data", "danger")
+            return redirect(url_for("dashboard"))
+        project.setdefault("exams", []).append({"name": name, "num_questions": num, "answer_key": [], "results": []})
+        data.save_data(data_store)
+        flash("Exam created", "success")
+        return redirect(url_for("dashboard"))
+
     @app.route("/project/<int:pid>")
     @login_required
     def view_project(pid: int):

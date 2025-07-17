@@ -4,6 +4,8 @@ This project provides a simple web application for correcting multiple choice te
 
 ![screenshot](docs/screenshot.png)
 
+Printable answer sheets can be generated from the LaTeX template in `docs/answer-sheet.tex`.
+
 ## Quick Start
 
 1. Install dependencies:

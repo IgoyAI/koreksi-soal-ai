@@ -66,8 +66,16 @@ def compare_answers(
     return results
 
 
-def detect_answers_from_bubbles(img: Image.Image, limit: int) -> Dict[int, str]:
-    """Detect filled circles on the standard answer sheet using OpenCV."""
+def detect_answers_from_bubbles(
+    img: Image.Image, limit: int
+) -> tuple[Dict[int, str], List[Dict[str, float]]]:
+    """Detect filled circles on the standard answer sheet using OpenCV.
+
+    Returns a mapping of question number to the detected answer letter and a
+    list of bounding boxes for each detected circle. Each bounding box is a
+    dictionary with relative percentage coordinates compatible with the result
+    template.
+    """
     gray = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2GRAY)
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
     _, thresh = cv2.threshold(
@@ -96,6 +104,7 @@ def detect_answers_from_bubbles(img: Image.Image, limit: int) -> Dict[int, str]:
     circles.sort(key=lambda t: (t[1], t[0]))
 
     answers: Dict[int, str] = {}
+    boxes: List[Dict[str, float]] = []
     row: List[tuple[int, int, int]] = []
     question = 1
     row_threshold = 20
@@ -112,7 +121,24 @@ def detect_answers_from_bubbles(img: Image.Image, limit: int) -> Dict[int, str]:
         circ = r[0]
         idx = int(round((circ[0] - min_x) / col_width))
         idx = max(0, min(idx, 4))
-        answers[q] = chr(ord("A") + idx)
+        ans = chr(ord("A") + idx)
+        answers[q] = ans
+
+        # bounding box for the detected circle
+        left = max(circ[0] - circ[2], 0)
+        top = max(circ[1] - circ[2], 0)
+        right = min(circ[0] + circ[2], gray.shape[1])
+        bottom = min(circ[1] + circ[2], gray.shape[0])
+        boxes.append(
+            {
+                "num": q,
+                "ans": ans,
+                "left": left / gray.shape[1] * 100,
+                "top": top / gray.shape[0] * 100,
+                "width": (right - left) / gray.shape[1] * 100,
+                "height": (bottom - top) / gray.shape[0] * 100,
+            }
+        )
 
     for circ in circles:
         if not row or abs(circ[1] - row[0][1]) < row_threshold:
@@ -124,7 +150,7 @@ def detect_answers_from_bubbles(img: Image.Image, limit: int) -> Dict[int, str]:
 
     process_row(row, question)
 
-    return answers
+    return answers, boxes
 
 
 def create_app() -> Flask:
@@ -260,44 +286,55 @@ def create_app() -> Flask:
             file.save(filepath)
 
             img = Image.open(filepath)
-            student_answers = detect_answers_from_bubbles(img, num_questions)
+            student_answers, bubble_boxes = detect_answers_from_bubbles(
+                img, num_questions
+            )
             if not student_answers:
                 text = pytesseract.image_to_string(img)
                 student_answers = parse_answers_from_text(text, num_questions)
             results = compare_answers(answer_key, student_answers)
             score = sum(results.values())
 
-            # extract bounding boxes for each detected "number letter" pair
-            data_dict = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
-            boxes: List[Dict[str, Any]] = []
-            width, height = img.size
-            n_words = len(data_dict["text"])
-            for i in range(n_words - 1):
-                first = data_dict["text"][i].strip()
-                second = data_dict["text"][i + 1].strip()
-                if first.isdigit() and len(second) == 1 and second.upper() in "ABCDE":
-                    num = int(first)
-                    if 1 <= num <= num_questions:
-                        left = min(data_dict["left"][i], data_dict["left"][i + 1])
-                        top = min(data_dict["top"][i], data_dict["top"][i + 1])
-                        right = max(
-                            data_dict["left"][i] + data_dict["width"][i],
-                            data_dict["left"][i + 1] + data_dict["width"][i + 1],
-                        )
-                        bottom = max(
-                            data_dict["top"][i] + data_dict["height"][i],
-                            data_dict["top"][i + 1] + data_dict["height"][i + 1],
-                        )
-                        boxes.append(
-                            {
-                                "num": num,
-                                "ans": second.upper(),
-                                "left": left / width * 100,
-                                "top": top / height * 100,
-                                "width": (right - left) / width * 100,
-                                "height": (bottom - top) / height * 100,
-                            }
-                        )
+            boxes: List[Dict[str, Any]] = bubble_boxes
+            if not boxes:
+                # fallback bounding boxes from OCR text
+                data_dict = pytesseract.image_to_data(
+                    img, output_type=pytesseract.Output.DICT
+                )
+                width, height = img.size
+                n_words = len(data_dict["text"])
+                for i in range(n_words - 1):
+                    first = data_dict["text"][i].strip()
+                    second = data_dict["text"][i + 1].strip()
+                    if first.isdigit() and len(second) == 1 and second.upper() in "ABCDE":
+                        num = int(first)
+                        if 1 <= num <= num_questions:
+                            left = min(
+                                data_dict["left"][i], data_dict["left"][i + 1]
+                            )
+                            top = min(
+                                data_dict["top"][i], data_dict["top"][i + 1]
+                            )
+                            right = max(
+                                data_dict["left"][i] + data_dict["width"][i],
+                                data_dict["left"][i + 1]
+                                + data_dict["width"][i + 1],
+                            )
+                            bottom = max(
+                                data_dict["top"][i] + data_dict["height"][i],
+                                data_dict["top"][i + 1]
+                                + data_dict["height"][i + 1],
+                            )
+                            boxes.append(
+                                {
+                                    "num": num,
+                                    "ans": second.upper(),
+                                    "left": left / width * 100,
+                                    "top": top / height * 100,
+                                    "width": (right - left) / width * 100,
+                                    "height": (bottom - top) / height * 100,
+                                }
+                            )
 
             results_list.append(
                 {

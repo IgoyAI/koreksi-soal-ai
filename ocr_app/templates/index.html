@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OCR Multiple Choice Checker</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    label { display: block; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>OCR Multiple Choice Checker</h1>
+  <form method="POST" enctype="multipart/form-data">
+    <label for="answer_key">Answer Key (50 letters A-E)</label>
+    <textarea id="answer_key" name="answer_key" rows="4" cols="60" required>{{ ''.join(answer_key) }}</textarea>
+    <br>
+    <button type="submit">Save Answer Key</button>
+  </form>
+  <hr>
+  <h2>Upload Answer Sheet</h2>
+  <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept="image/*" capture="environment" required>
+    <button type="submit">Upload and Check</button>
+  </form>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul>
+      {% for category, message in messages %}
+        <li style="color: {% if category == 'danger' %}red{% else %}green{% endif %};">
+          {{ message }}
+        </li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+</body>
+</html>

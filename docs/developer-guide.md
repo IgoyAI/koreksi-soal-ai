@@ -17,13 +17,17 @@ docs/
     answer-sheet.tex
 requirements.txt
 ```
+The application allows the user to specify how many questions are on the test. The answer key is selected using radio buttons on the main page, and the upload endpoint can handle multiple images at once.
 
 ## Key Functions
-- `parse_answers_from_text(text)`
+- `parse_answers_from_text(text, limit)`
   - Uses a regular expression to extract pairs of question number and answer letter.
-  - Only numbers 1-50 and letters A-E are considered.
+  - Only question numbers within `limit` and letters A-E are considered.
 - `compare_answers(answer_key, student_answers)`
   - Compares the parsed answers against the provided key and returns per-question correctness.
+
+The `/upload` route accepts multiple image files at once and processes each separately.
+
 
 ## Running Locally
 1. Install dependencies: `pip install -r requirements.txt`.

@@ -11,19 +11,23 @@
 </head>
 <body>
   <h1>Results</h1>
+  {% for entry in results_list %}
+  <h2>{{ entry.filename }}</h2>
+
   <table>
     <tr>
       <th>Question</th>
       <th>Correct</th>
     </tr>
-    {% for number, is_correct in results.items() %}
+    {% for number, is_correct in entry.results.items() %}
     <tr>
       <td>{{ number }}</td>
       <td>{{ '✓' if is_correct else '✗' }}</td>
     </tr>
     {% endfor %}
   </table>
-  <p>Score: {{ score }} / {{ total }}</p>
+  <p>Score: {{ entry.score }} / {{ total }}</p>
+  {% endfor %}
   <a href="{{ url_for('index') }}">Back</a>
 </body>
 </html>

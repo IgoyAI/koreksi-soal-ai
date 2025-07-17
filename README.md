@@ -1,6 +1,5 @@
 # OCR Multiple Choice Checker
-
-This project provides a simple web application for correcting multiple choice tests using OCR and your device's camera. It supports up to **50 questions** with answer options **A** through **E**.
+This project provides a simple web application for correcting multiple choice tests using OCR and your device's camera. The number of questions can be configured and each question has answer options **A** through **E**.
 
 ![screenshot](docs/screenshot.png)
 

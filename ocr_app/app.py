@@ -2,7 +2,7 @@ import os
 import re
 from typing import Dict, List
 
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from werkzeug.utils import secure_filename
 
 import pytesseract
@@ -41,26 +41,45 @@ def create_app() -> Flask:
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+    project_name: str | None = None
+    exam_name: str | None = None
     answer_key: List[str] = []
     num_questions: int = 50
 
     @app.route('/', methods=['GET', 'POST'])
     def index():
-        nonlocal answer_key, num_questions
+        nonlocal project_name, exam_name, answer_key, num_questions
         if request.method == 'POST':
-            if 'num_questions' in request.form:
+            # Step 1: project creation
+            if 'project_name' in request.form:
+                name = request.form.get('project_name', '').strip()
+                if not name:
+                    flash('Project name is required.', 'danger')
+                else:
+                    project_name = name
+                    flash('Project created.', 'success')
+                return redirect(url_for('index'))
+
+            # Step 2: exam details
+            if 'exam_name' in request.form:
+                name = request.form.get('exam_name', '').strip()
                 try:
                     n = int(request.form.get('num_questions', '50'))
                     if n <= 0 or n > 100:
                         raise ValueError
-                    num_questions = n
-                    answer_key = []
-                    flash(f'Number of questions set to {num_questions}.', 'success')
                 except ValueError:
                     flash('Invalid number of questions.', 'danger')
+                    return redirect(url_for('index'))
+                if not name:
+                    flash('Exam name is required.', 'danger')
+                    return redirect(url_for('index'))
+                exam_name = name
+                num_questions = n
+                answer_key = []
+                flash('Exam details saved.', 'success')
                 return redirect(url_for('index'))
 
-            # read answer key from radio buttons
+            # Step 3: answer key
             answers: List[str] = []
             for i in range(1, num_questions + 1):
                 val = request.form.get(f'q{i}')
@@ -72,13 +91,19 @@ def create_app() -> Flask:
             flash('Answer key saved. Upload answer sheet image to check.', 'success')
             return redirect(url_for('index'))
 
-        return render_template('index.html', answer_key=answer_key, num_questions=num_questions)
+        return render_template(
+            'index.html',
+            project_name=project_name,
+            exam_name=exam_name,
+            answer_key=answer_key,
+            num_questions=num_questions,
+        )
 
     @app.route('/upload', methods=['POST'])
     def upload():
-        nonlocal answer_key, num_questions
-        if not answer_key:
-            flash('Please submit the answer key first.', 'danger')
+        nonlocal project_name, exam_name, answer_key, num_questions
+        if not exam_name or not answer_key:
+            flash('Please submit exam details and answer key first.', 'danger')
             return redirect(url_for('index'))
         files = request.files.getlist('files')
         valid_files = [f for f in files if f and allowed_file(f.filename)]
@@ -99,6 +124,22 @@ def create_app() -> Flask:
             results_list.append({'filename': filename, 'results': results, 'score': score})
 
         return render_template('result.html', results_list=results_list, total=len(answer_key))
+
+    @app.route('/download')
+    def download_sheet():
+        nonlocal exam_name, num_questions
+        if not exam_name:
+            flash('Exam details not set.', 'danger')
+            return redirect(url_for('index'))
+        tex = render_template('answer_sheet.tex', exam_name=exam_name, num_questions=num_questions)
+        tmpdir = os.path.join(app.root_path, 'tmp')
+        os.makedirs(tmpdir, exist_ok=True)
+        tex_path = os.path.join(tmpdir, 'sheet.tex')
+        pdf_path = os.path.join(tmpdir, 'sheet.pdf')
+        with open(tex_path, 'w') as f:
+            f.write(tex)
+        os.system(f'pdflatex -output-directory {tmpdir} {tex_path} >/dev/null 2>&1')
+        return send_file(pdf_path, as_attachment=True, download_name=f"{exam_name}_answer_sheet.pdf")
 
     return app
 

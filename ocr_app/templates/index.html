@@ -10,14 +10,26 @@
 </head>
 <body>
   <h1>OCR Multiple Choice Checker</h1>
+
+  {% if not project_name %}
+  <h2>Create Project</h2>
   <form method="POST">
-    <label for="num_questions">Number of Questions</label>
-    <input type="number" id="num_questions" name="num_questions" min="1" max="100" value="{{ num_questions }}">
-    <button type="submit">Set</button>
+    <label for="project_name">Project Name</label>
+    <input type="text" id="project_name" name="project_name" required>
+    <button type="submit">Create</button>
   </form>
-
-  <hr>
-
+  {% elif not exam_name %}
+  <h2>Exam Details</h2>
+  <form method="POST">
+    <label for="exam_name">Exam Name</label>
+    <input type="text" id="exam_name" name="exam_name" required>
+    <label for="num_questions">Number of Questions</label>
+    <input type="number" id="num_questions" name="num_questions" min="1" max="100" value="{{ num_questions }}" required>
+    <button type="submit">Save Exam</button>
+  </form>
+  {% else %}
+  <h2>Project: {{ project_name }} - {{ exam_name }}</h2>
+  <p><a href="{{ url_for('download_sheet') }}">Download Answer Sheet</a></p>
   <form method="POST">
     <table>
       <tr>
@@ -47,6 +59,8 @@
     <input type="file" name="files" accept="image/*" capture="environment" multiple required>
     <button type="submit">Upload and Check</button>
   </form>
+  {% endif %}
+
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <ul>

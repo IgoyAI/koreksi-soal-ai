@@ -1,6 +1,7 @@
 import os
 import re
 import uuid
+import subprocess
 from typing import Dict, List, Any
 
 from flask import (
@@ -247,9 +248,34 @@ def create_app() -> Flask:
         pdf_path = os.path.join(tmpdir, "sheet.pdf")
         with open(tex_path, "w") as f:
             f.write(tex)
-        os.system(f"pdflatex -output-directory {tmpdir} {tex_path} >/dev/null 2>&1")
+        try:
+            subprocess.run(
+                [
+                    "pdflatex",
+                    "-interaction=nonstopmode",
+                    "-output-directory",
+                    tmpdir,
+                    tex_path,
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            flash(
+                "pdflatex not found or failed to generate PDF. Please install LaTeX.",
+                "danger",
+            )
+            return redirect(url_for("index"))
+
+        if not os.path.exists(pdf_path):
+            flash("Failed to generate PDF", "danger")
+            return redirect(url_for("index"))
+
         return send_file(
-            pdf_path, as_attachment=True, download_name=f"{exam_name}_answer_sheet.pdf"
+            pdf_path,
+            as_attachment=True,
+            download_name=f"{exam_name}_answer_sheet.pdf",
         )
 
     @app.route("/dashboard")

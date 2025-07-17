@@ -18,7 +18,6 @@ docs/
 requirements.txt
 ```
 
-
 ## Key Functions
 - `parse_answers_from_text(text)`
   - Uses a regular expression to extract pairs of question number and answer letter.

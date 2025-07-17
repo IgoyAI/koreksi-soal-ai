@@ -1,76 +1,72 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>OCR Multiple Choice Checker</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    label { display: block; margin-top: 10px; }
-  </style>
-</head>
-<body>
-  <h1>OCR Multiple Choice Checker</h1>
-
+{% extends 'base.html' %}
+{% block title %}OCR Checker{% endblock %}
+{% block content %}
+  <h1 class="mb-4">OCR Multiple Choice Checker</h1>
   {% if not project_name %}
-  <h2>Create Project</h2>
-  <form method="POST">
-    <label for="project_name">Project Name</label>
-    <input type="text" id="project_name" name="project_name" required>
-    <button type="submit">Create</button>
-  </form>
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Create Project</h3></div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="form-group">
+            <label for="project_name">Project Name</label>
+            <input type="text" class="form-control" id="project_name" name="project_name" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Create</button>
+        </form>
+      </div>
+    </div>
   {% elif not exam_name %}
-  <h2>Exam Details</h2>
-  <form method="POST">
-    <label for="exam_name">Exam Name</label>
-    <input type="text" id="exam_name" name="exam_name" required>
-    <label for="num_questions">Number of Questions</label>
-    <input type="number" id="num_questions" name="num_questions" min="1" max="100" value="{{ num_questions }}" required>
-    <button type="submit">Save Exam</button>
-  </form>
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Exam Details</h3></div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="form-group">
+            <label for="exam_name">Exam Name</label>
+            <input type="text" class="form-control" id="exam_name" name="exam_name" required>
+          </div>
+          <div class="form-group">
+            <label for="num_questions">Number of Questions</label>
+            <input type="number" class="form-control" id="num_questions" name="num_questions" min="1" max="100" value="{{ num_questions }}" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Save Exam</button>
+        </form>
+      </div>
+    </div>
   {% else %}
-  <h2>Project: {{ project_name }} - {{ exam_name }}</h2>
-  <p><a href="{{ url_for('download_sheet') }}">Download Answer Sheet</a></p>
-  <form method="POST">
-    <table>
-      <tr>
-        <th>No</th>
-        <th colspan="5">Answer Key</th>
-      </tr>
-      {% for q in range(1, num_questions + 1) %}
-      <tr>
-        <td>{{ q }}</td>
-        {% for opt in ['A', 'B', 'C', 'D', 'E'] %}
-        <td>
-          <label>
-            <input type="radio" name="q{{ q }}" value="{{ opt }}" {% if answer_key and answer_key[q-1]==opt %}checked{% endif %}>
-            {{ opt }}
-          </label>
-        </td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </table>
-
-    <button type="submit">Save Answer Key</button>
-  </form>
-  <hr>
-  <h2>Upload Answer Sheet</h2>
-  <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
-    <input type="file" name="files" accept="image/*" capture="environment" multiple required>
-    <button type="submit">Upload and Check</button>
-  </form>
-  {% endif %}
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <ul>
-      {% for category, message in messages %}
-        <li style="color: {% if category == 'danger' %}red{% else %}green{% endif %};">
-          {{ message }}
+    <div class="mb-3">
+      <h3>Project: {{ project_name }} - {{ exam_name }}</h3>
+      <a class="btn btn-secondary" href="{{ url_for('download_sheet') }}">Download Answer Sheet</a>
+    </div>
+    <form method="POST">
+      <ul class="list-group mb-3">
+        {% for q in range(1, num_questions + 1) %}
+        <li class="list-group-item">
+          <div class="d-flex align-items-center">
+            <strong class="mr-3">{{ q }}</strong>
+            <div class="custom-control custom-radio mr-3" style="display:none"></div>
+            {% for opt in ['A', 'B', 'C', 'D', 'E'] %}
+              <div class="custom-control custom-radio mr-2">
+                <input type="radio" id="q{{ q }}{{ opt }}" name="q{{ q }}" value="{{ opt }}" class="custom-control-input" {% if answer_key and answer_key[q-1]==opt %}checked{% endif %}>
+                <label class="custom-control-label" for="q{{ q }}{{ opt }}">{{ opt }}</label>
+              </div>
+            {% endfor %}
+          </div>
         </li>
-      {% endfor %}
+        {% endfor %}
       </ul>
-    {% endif %}
-  {% endwith %}
-</body>
-</html>
+      <button type="submit" class="btn btn-primary">Save Answer Key</button>
+    </form>
+    <hr>
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Upload Answer Sheet</h3></div>
+      <div class="card-body">
+        <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+          <div class="form-group">
+            <input type="file" class="form-control-file" name="files" accept="image/*" capture="environment" multiple required>
+          </div>
+          <button type="submit" class="btn btn-success">Upload and Check</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Results</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    table { border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>Results</h1>
+  {% for entry in results_list %}
+  <h2>{{ entry.filename }}</h2>
+  <table>
+    <tr>
+      <th>Question</th>
+      <th>Correct</th>
+    </tr>
+    {% for number, is_correct in entry.results.items() %}
+    <tr>
+      <td>{{ number }}</td>
+      <td>{{ '✓' if is_correct else '✗' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p>Score: {{ entry.score }} / {{ total }}</p>
+  {% endfor %}
+  <a href="{{ url_for('index') }}">Back</a>
+</body>
+</html>

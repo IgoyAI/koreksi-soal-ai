@@ -17,7 +17,6 @@ docs/
     answer-sheet.tex
 requirements.txt
 ```
-
 The application allows the user to specify how many questions are on the test. The answer key is selected using radio buttons on the main page, and the upload endpoint can handle multiple images at once.
 
 ## Key Functions
@@ -28,6 +27,7 @@ The application allows the user to specify how many questions are on the test. T
   - Compares the parsed answers against the provided key and returns per-question correctness.
 
 The `/upload` route accepts multiple image files at once and processes each separately.
+
 
 ## Running Locally
 1. Install dependencies: `pip install -r requirements.txt`.

@@ -14,7 +14,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
 def parse_answers_from_text(text: str, limit: int) -> Dict[int, str]:
     """Parse OCR text into a mapping of question number to answer letter."""
     pattern = re.compile(r"(\d+)\s*([ABCDEabcde])")
@@ -89,6 +88,7 @@ def create_app() -> Flask:
 
         results_list = []
         for file in valid_files:
+
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)

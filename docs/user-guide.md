@@ -22,3 +22,4 @@ This application allows you to check multiple choice answer sheets using OCR fro
 
 ## Notes
 - The OCR is basic and works best with clean, high-contrast images where each answer is written as `number letter` (e.g. `1 A`).
+

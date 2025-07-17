@@ -302,6 +302,29 @@ def create_app() -> Flask:
         exam = project["exams"][eid]
         return render_template("exam_view.html", exam=exam, pid=pid)
 
+    @app.route("/project/<int:pid>/exam/<int:eid>/ocr")
+    @login_required
+    def ocr_exam(pid: int, eid: int):
+        """Load an existing exam into the main OCR workflow."""
+        nonlocal project_name, exam_name, answer_key, num_questions
+        data_store = data.load_data()
+        if pid < 0 or pid >= len(data_store.get("projects", [])):
+            flash("Project not found", "danger")
+            return redirect(url_for("dashboard"))
+        project = data_store["projects"][pid]
+        if eid < 0 or eid >= len(project.get("exams", [])):
+            flash("Exam not found", "danger")
+            return redirect(url_for("view_project", pid=pid))
+        exam = project["exams"][eid]
+
+        project_name = project["name"]
+        exam_name = exam["name"]
+        answer_key = exam.get("answer_key", [])
+        num_questions = exam.get("num_questions", 50)
+
+        flash("Loaded exam into OCR checker", "success")
+        return redirect(url_for("index"))
+
     @app.route("/project/<int:pid>/exam/<int:eid>/edit", methods=["GET", "POST"])
     @login_required
     def edit_exam(pid: int, eid: int):

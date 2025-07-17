@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Exam {{ exam.name }}{% endblock %}
+{% block content %}
+<h1 class="mb-4">Exam: {{ exam.name }}</h1>
+<a href="{{ url_for('view_project', pid=pid) }}" class="btn btn-secondary mb-3">Back</a>
+{% if not exam.results %}
+<p>No results yet.</p>
+{% else %}
+  <ul class="list-group">
+    {% for r in exam.results %}
+    <li class="list-group-item d-flex justify-content-between">
+      <span>{{ r.filename }}</span>
+      <span>{{ r.score }} / {{ exam.num_questions }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+{% endblock %}

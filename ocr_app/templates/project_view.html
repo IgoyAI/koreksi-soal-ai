@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Project {{ project.name }}{% endblock %}
+{% block content %}
+<h1 class="mb-4">Project: {{ project.name }}</h1>
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary mb-3">Back</a>
+{% if not project.exams %}
+<p>No exams.</p>
+{% else %}
+  {% for exam in project.exams %}
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between">
+      <h5 class="card-title mb-0">{{ exam.name }}</h5>
+      <div>
+        <a href="{{ url_for('view_exam', pid=pid, eid=loop.index0) }}" class="btn btn-sm btn-info">View</a>
+        <a href="{{ url_for('edit_exam', pid=pid, eid=loop.index0) }}" class="btn btn-sm btn-warning">Edit</a>
+        <form action="{{ url_for('delete_exam', pid=pid, eid=loop.index0) }}" method="post" style="display:inline">
+          <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete exam?')">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% endif %}
+{% endblock %}

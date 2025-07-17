@@ -18,6 +18,8 @@ from werkzeug.utils import secure_filename
 
 import pytesseract
 from PIL import Image
+import cv2
+import numpy as np
 
 from . import data
 
@@ -62,6 +64,67 @@ def compare_answers(
         student = student_answers.get(i, "")
         results[i] = key == student
     return results
+
+
+def detect_answers_from_bubbles(img: Image.Image, limit: int) -> Dict[int, str]:
+    """Detect filled circles on the standard answer sheet using OpenCV."""
+    gray = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    _, thresh = cv2.threshold(
+        blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+    )
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
+    contours, _ = cv2.findContours(
+        closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+
+    circles: List[tuple[int, int, int]] = []
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area < 50:
+            continue
+        (x, y), radius = cv2.minEnclosingCircle(c)
+        if radius < 5 or radius > 30:
+            continue
+        mask = np.zeros_like(gray)
+        cv2.circle(mask, (int(x), int(y)), int(radius), 255, -1)
+        filled_ratio = cv2.mean(thresh, mask=mask)[0] / 255.0
+        if filled_ratio > 0.5:
+            circles.append((int(x), int(y), int(radius)))
+
+    circles.sort(key=lambda t: (t[1], t[0]))
+
+    answers: Dict[int, str] = {}
+    row: List[tuple[int, int, int]] = []
+    question = 1
+    row_threshold = 20
+
+    def process_row(r: List[tuple[int, int, int]], q: int) -> None:
+        if not r or q > limit:
+            return
+        r.sort(key=lambda t: t[0])
+        min_x = r[0][0]
+        max_x = r[-1][0]
+        if max_x == min_x:
+            return
+        col_width = (max_x - min_x) / 4.0
+        circ = r[0]
+        idx = int(round((circ[0] - min_x) / col_width))
+        idx = max(0, min(idx, 4))
+        answers[q] = chr(ord("A") + idx)
+
+    for circ in circles:
+        if not row or abs(circ[1] - row[0][1]) < row_threshold:
+            row.append(circ)
+        else:
+            process_row(row, question)
+            question += 1
+            row = [circ]
+
+    process_row(row, question)
+
+    return answers
 
 
 def create_app() -> Flask:
@@ -197,8 +260,10 @@ def create_app() -> Flask:
             file.save(filepath)
 
             img = Image.open(filepath)
-            text = pytesseract.image_to_string(img)
-            student_answers = parse_answers_from_text(text, num_questions)
+            student_answers = detect_answers_from_bubbles(img, num_questions)
+            if not student_answers:
+                text = pytesseract.image_to_string(img)
+                student_answers = parse_answers_from_text(text, num_questions)
             results = compare_answers(answer_key, student_answers)
             score = sum(results.values())
 

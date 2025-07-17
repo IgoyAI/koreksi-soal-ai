@@ -22,5 +22,6 @@ This application allows you to check multiple choice answer sheets using OCR fro
 7. After uploading, the application will display a table for each file showing which questions are correct and the total score.
 
 ## Notes
-- The OCR is basic and works best with clean, high-contrast images where each answer is written as `number letter` (e.g. `1 A`).
+- The application now attempts to detect which circle is filled on the provided answer sheet.
+- If bubble detection fails, it falls back to OCR text patterns like `1 A`.
 

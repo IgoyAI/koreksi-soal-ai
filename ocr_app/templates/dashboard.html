@@ -6,13 +6,15 @@
     <p>No projects yet.</p>
   {% else %}
     {% for project in projects %}
+      {% set pid = loop.index0 %}
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h3 class="card-title mb-0">{{ project.name }}</h3>
           <div>
-            <a href="{{ url_for('view_project', pid=loop.index0) }}" class="btn btn-sm btn-info">View</a>
-            <a href="{{ url_for('edit_project', pid=loop.index0) }}" class="btn btn-sm btn-warning">Edit</a>
-            <form action="{{ url_for('delete_project', pid=loop.index0) }}" method="post" style="display:inline">
+
+            <a href="{{ url_for('view_project', pid=pid) }}" class="btn btn-sm btn-info">View</a>
+            <a href="{{ url_for('edit_project', pid=pid) }}" class="btn btn-sm btn-warning">Edit</a>
+            <form action="{{ url_for('delete_project', pid=pid) }}" method="post" style="display:inline">
               <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete project?')">Delete</button>
             </form>
           </div>
@@ -22,12 +24,14 @@
             <p class="mb-0">No exams.</p>
           {% else %}
             {% for exam in project.exams %}
+
+              {% set eid = loop.index0 %}
               <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">{{ exam.name }}</h5>
                 <div>
-                  <a href="{{ url_for('view_exam', pid=loop.parent.index0, eid=loop.index0) }}" class="btn btn-sm btn-info">View</a>
-                  <a href="{{ url_for('edit_exam', pid=loop.parent.index0, eid=loop.index0) }}" class="btn btn-sm btn-warning">Edit</a>
-                  <form action="{{ url_for('delete_exam', pid=loop.parent.index0, eid=loop.index0) }}" method="post" style="display:inline">
+                  <a href="{{ url_for('view_exam', pid=pid, eid=eid) }}" class="btn btn-sm btn-info">View</a>
+                  <a href="{{ url_for('edit_exam', pid=pid, eid=eid) }}" class="btn btn-sm btn-warning">Edit</a>
+                  <form action="{{ url_for('delete_exam', pid=pid, eid=eid) }}" method="post" style="display:inline">
                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete exam?')">Delete</button>
                   </form>
                 </div>
